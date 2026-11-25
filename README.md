@@ -1,6 +1,14 @@
 # LongBridge-QuantSystem
 go开发的长桥量化美股
 
+修改config.env中
+LONGPORT_APP_KEY=
+LONGPORT_APP_SECRET=
+LONGBRIDGE_ACCESS_TOKEN=
+
+启动LongBridge-QuantSystem.exe
+
+
 [WARN] 2026/06/13 01:59:34 summary.go:95: 【策略订单明细】
 [WARN] 2026/06/13 01:59:34 summary.go:166: ┌──────────────┬──────────┬────────┬────────┬────────────┬──────┬────────────┬──────────┬──────────────┐
 [WARN] 2026/06/13 01:59:34 summary.go:166: │ OrderId      │ Symbol   │ Action │ Price  │ ClosePrice │ Num  │ remaining  │ Profit   │ CloseOrderId │
