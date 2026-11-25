@@ -1,0 +1,698 @@
+✅ 总结一下你已完成的功能
+你的量化交易系统现在已经具备：
+
+1. 核心功能
+✅ 从 config.env 读取所有配置（API密钥、股票列表、策略参数等）
+
+✅ 支持多个股票同时监控（SYMBOLS=AAPL.US,SOXL.US）
+
+✅ 交易时段控制（盘中/盘后/盘前/夜盘,支持位掩码组合）
+
+✅ 自动时区转换（北京时间 → 美东时间,支持夏令时）
+
+✅ 两种策略模式：价格差异策略 + 百分比差异策略
+
+2. 日志系统
+✅ 日志级别控制（DEBUG/INFO/WARN/ERROR）
+
+✅ 同时输出到文件和控制台
+
+✅ 正确显示调用者文件名和行号（main.go:xxx）
+
+✅ 详细日志开关（VERBOSE_LOG）
+
+3. 风控机制
+✅ 单日最大交易次数限制
+
+✅ 仓位管理（最小/最大数量控制）
+
+✅ 止损比例配置
+
+4. 长桥 SDK 集成
+✅ 交易上下文 (trade.TradeContext)
+
+✅ 行情上下文 (quote.QuoteContext)
+
+✅ 行情订阅 (Subscribe)
+
+✅ 实时报价获取 (Quote)
+
+📋 当前目录结构
+text
+F:\go\LongBridge-QuantSystem\
+├── config.env              # 配置文件
+├── go.mod                  # Go 模块文件
+├── go.sum                  # 依赖校验
+├── main.go                 # 主程序
+├── config\
+│   └── config.go           # 配置加载模块
+├── logger\
+│   └── logger.go           # 日志模块
+├── strategy\
+│   └── strategy.go         # 策略模块
+├── trading\
+│   └── trading.go          # 交易时段模块
+├── utils\
+│   └── timezone.go         # 时区工具
+└── logs\                   # 日志目录（自动创建）
+    └── quant_2026-03-25_xx-xx-xx.log
+
+🚀 下一步建议
+完善策略逻辑：将 getStrategyPrice() 替换为你的实际策略模型
+
+接入真实行情：使用 qs.quoteCtx.Quote() 获取实时价格
+
+实现真实下单：取消 executeOrder 中的注释,接入真实交易接口
+
+添加持仓管理：获取当前持仓,避免超额买入
+
+增加更多风控：如最大回撤限制、单股最大持仓比例等
+
+
+
+
+我来帮你实现多策略切换系统,支持通过配置文件和控制台指令动态切换策略。
+
+📁 完整的目录结构
+text
+F:\go\LongBridge-QuantSystem\
+├── main.go
+├── config.env
+├── strategy/
+│   ├── strategy.go          # 策略接口和基础定义
+│   ├── strategy1.go         # 策略1：30分钟量价策略
+│   ├── strategy2.go         # 策略2：趋势跟踪策略
+│   └── strategy_manager.go  # 策略管理器
+
+控制台命令
+命令	说明
+strategy	列出所有可用策略
+strategy VolumePrice	切换到30分钟量价策略
+strategy Trend	切换到趋势跟踪策略
+status	显示当前状态
+help	显示帮助
+
+
+
+
+
+
+
+
+
+
+2026-3-25 18:00:00
+✅ 系统完成总结
+你的 LongBridge-QuantSystem 现在已经是一个功能完整的量化交易系统,具备以下核心功能：
+
+📊 已完成的功能模块
+模块	功能	状态
+配置管理	从 config.env 加载所有配置参数	✅
+日志系统	级别控制（DEBUG/INFO/WARN/ERROR）,双输出（文件+控制台）	✅
+交易时段控制	支持盘中/盘后/盘前/夜盘,位掩码组合,自动时区转换	✅
+策略系统	多策略支持,可动态切换（VolumePrice/Trend）	✅
+行情接入	实时订阅和获取股票报价	✅
+交易执行	限价单下单,订单ID返回	✅
+持仓管理	获取持仓、更新价格、计算盈亏	✅
+风控机制	每日交易次数限制、持仓比例限制、止损	✅
+控制台交互	动态切换策略、查看状态	✅
+
+
+📋 控制台命令
+命令	说明
+strategy	列出所有可用策略
+strategy VolumePrice	切换到30分钟量价策略
+strategy Trend	切换到趋势跟踪策略
+status	显示当前状态
+help	显示帮助
+
+
+📝 下一步建议
+测试模拟盘：先用模拟盘测试策略效果
+
+优化策略参数：根据回测结果调整 config.env 中的阈值
+
+添加更多策略：在 strategy/ 目录下创建新的策略文件
+
+监控日志：查看 logs/ 目录下的日志文件分析运行情况
+
+
+2026-3-26 11:30:00
+📋 新增策略时只需两步
+创建策略文件（如 strategy_your.go）
+
+在 strategy_manager.go 中注册：
+
+
+// PushQuote is quote info push from server
+type PushQuote struct {
+	Symbol       string
+	Sequence     int64
+	LastDone     *decimal.Decimal
+	Open         *decimal.Decimal
+	High         *decimal.Decimal
+	Low          *decimal.Decimal
+	Timestamp    int64
+	Volume       int64
+	Turnover     *decimal.Decimal
+	TradeStatus  TradeStatus
+	TradeSession TradeSessionType
+}
+根据长桥 SDK 的 PushQuote 结构体,各字段含义如下：
+
+📊 PushQuote 字段说明
+字段	类型	说明	示例值
+Symbol	string	股票代码	"AAPL.US", "SOXL.US"
+Sequence	int64	消息序列号,用于去重和排序	123456789
+LastDone	*decimal.Decimal	最新成交价	175.50
+Open	*decimal.Decimal	今日开盘价	174.20
+High	*decimal.Decimal	今日最高价	176.30
+Low	*decimal.Decimal	今日最低价	174.00
+Timestamp	int64	行情时间戳（毫秒级 Unix 时间戳）	1700000000000
+Volume	int64	今日成交量（股数）	12500000
+Turnover	*decimal.Decimal	今日成交额	2187500000.00
+TradeStatus	TradeStatus	交易状态	见下方枚举
+TradeSession	TradeSessionType	交易时段类型	见下方枚举
+📋 TradeStatus 交易状态枚举
+值	说明
+Normal	正常交易
+Halted	停牌
+Delisted	退市
+Suspended	暂停交易
+PreOpen	盘前
+PreClose	盘后
+Closed	收盘
+📋 TradeSessionType 交易时段类型
+值	说明
+PreMarket	盘前交易 (04:00-09:30)
+Regular	盘中交易 (09:30-16:00)
+PostMarket	盘后交易 (16:00-20:00)
+Overnight	夜盘交易 (20:00-04:00)
+
+📋 字段用途
+字段	用途
+LastDone	策略信号判断的主要数据
+Open/High/Low	计算日内波动、支撑阻力位
+Volume/Turnover	量价分析
+TradeStatus	判断股票是否可交易
+TradeSession	判断当前交易时段,决定是否执行策略
+Timestamp	行情时效性检查
+
+
+要从 Excel 文件读取数据并转换成 PushQuote 结构体,你需要使用 Go 的 Excel 处理库。这里提供完整的解决方案：
+✅ 使用 excelize 库读取 Excel
+
+go get github.com/xuri/excelize/v2
+
+
+EMA 的作用
+emaShort 和 emaLong 用于趋势判断,是技术分析中最常用的指标之一：
+
+指标	典型周期	作用
+emaShort	10-20 周期	反映短期价格趋势,更敏感
+emaLong	30-50 周期	反映长期价格趋势,更稳定
+交叉信号：
+
+emaShort 上穿 emaLong → 金叉 → 上涨趋势信号
+
+emaShort 下穿 emaLong → 死叉 → 下跌趋势信号
+
+EMA vs SMA 对比
+特性	EMA	SMA
+计算方式	指数加权,近期权重更高	简单平均,所有周期等权
+响应速度	快,对价格变化敏感	慢,有滞后
+适用场景	趋势跟踪、短线交易	判断大方向、过滤噪音
+平滑度	较平滑	更平滑
+
+价格:    100 → 101 → 102 → 103 → 104 → 105 → 106 → 107 → 108 → 109
+
+SMA(5):  100 → 101 → 102 → 103 → 104 → 105 → 106 → 107 → 108 → 109
+EMA(5):  100 → 100.6→101.3→102.1→102.9→103.8→104.7→105.6→106.6→107.6
+
+当价格从100涨到109：
+- EMA 从 100 → 107.6（上涨7.6）
+- SMA 从 100 → 109（上涨9）
+
+说明：EMA 更平滑,但 SMA 更贴近实际价格
+
+
+SignalPeriod 的作用
+信号线（Signal Line） 是 EMA 的二次平滑,用于生成更可靠的交易信号：
+
+概念	说明	典型周期
+快线 (Fast EMA)	短期EMA,反应灵敏	10-20
+慢线 (Slow EMA)	长期EMA,趋势确认	30-50
+信号线 (Signal Line)	快线的EMA,用于过滤假信号	5-9
+典型应用（MACD指标）：
+
+MACD线 = 快线 - 慢线
+
+信号线 = MACD线的EMA
+
+金叉：MACD线上穿信号线 → 买入信号
+
+死叉：MACD线下穿信号线 → 卖出信号
+
+
+2026-4-1
+price_updater.go
+1、根据lastPrices,生成1份新的按每分钟历史时间、价格、成交量历史记录,生成MACD指标,方便其他模块取其指标
+2、同时存在2笔订单未卖出,1笔price:52.14,1笔price:52.3,价格达到52.64,没有卖出price:52.14的
+s.strategyType = LongTypeFixed, s.priceRebound=0.5
+map[action:BUY bought_qty:50 category:1 is_sold:false order_id:1223996771231891456 price:52.14 profit:0 quantity:50 remaining:50 sellorderid: sold_qty:0 symbol:SOXL.US] 
+map[action:BUY bought_qty:50 category:1 is_sold:false order_id:1223998029162377216 price:52.3 profit:0 quantity:50 remaining:50 sellorderid: sold_qty:0 symbol:SOXL.US]
+解决：
+按买入价从低到高排序（优先卖低价订单）、不这样处理,会卡单,下降区域也一直卖不掉
+
+3、增加控制台指令修改配置
+set GridPriceType 0
+
+2026-4-2
+1、控制台获取指令支持
+2、日志时间修正
+3、结束订单统计增加订单时间
+4、美化统计输出
+5、增加cmd日志等级
+6、增加回撤卖出
+
+2026-4-3
+1、修正总体统计盈利和盈亏汇总匹配不上(真实订单成交价格与提交目标价格不一样导致)
+2、起服、结束输出公共配置
+3、增加MACD指标、趋势上涨加仓
+4、去除tick级价位,增加秒级价位
+5、趋势逻辑冷却处理
+
+2026-4-4
+1、改回原网格模式,后续把趋势模式单独出来,后续同时跑多个模式,并分别控制不同策略仓位
+2、多策略同时支持
+
+2026-4-8
+1、优化calculateWindowTrend趋势算法不精准
+2、增加秒级macd
+3、修复测试模式定时器和事件同时触发买单、卖单
+
+方法1：
+// calculateWindowTrend 计算时间窗口内的趋势（秒级数据优化版）
+func (s *GridStrategy) calculateWindowTrend(prices []float64, volumes []int64, timestamps []int64) string {
+	windowSize := len(prices)
+	if windowSize < s.appConfig.VolumeSmoothPeriod {
+		return "SIDEWAYS"
+	}
+
+	// 1. 价格趋势分析（使用线性回归）
+	priceTrend := s.calculatePriceTrend(prices)
+	
+	// 2. 成交量趋势分析（使用加权移动平均）
+	volumeTrend := s.calculateVolumeTrend(volumes)
+	
+	// 3. 量价配合度分析
+	correlation := s.calculatePriceVolumeCorrelation(prices, volumes)
+	
+	// 4. 趋势强度计算
+	trendStrength := math.Abs(priceTrend) * (0.4 + 0.6*correlation)
+	
+	// 5. 动态阈值（基于波动率）
+	volatility := s.calculateVolatility(prices)
+	threshold := s.getDynamicThreshold(volatility)
+	
+	// 详细日志
+	logger.Debug("[%s] 趋势分析: 价格趋势=%.4f%%, 成交量趋势=%.4f%%, 量价相关度=%.2f, 趋势强度=%.4f, 波动率=%.2f%%, 阈值=%.4f",
+		s.name, priceTrend*100, volumeTrend, correlation, trendStrength, volatility*100, threshold)
+	
+	// 判断趋势
+	if priceTrend > threshold && correlation > 0.3 {
+		return "UP"
+	} else if priceTrend < -threshold && correlation > 0.3 {
+		return "DOWN"
+	} else if priceTrend > threshold/2 && volumeTrend > 0.1 {
+		// 弱上涨但成交量配合
+		return "UP_WEAK"
+	} else if priceTrend < -threshold/2 && volumeTrend > 0.1 {
+		// 弱下跌但成交量配合
+		return "DOWN_WEAK"
+	}
+	
+	return "SIDEWAYS"
+}
+
+// calculatePriceTrend 计算价格趋势（使用线性回归斜率）
+func (s *GridStrategy) calculatePriceTrend(prices []float64) float64 {
+	n := float64(len(prices))
+	if n < 2 {
+		return 0
+	}
+	
+	// 线性回归计算斜率
+	var sumX, sumY, sumXY, sumX2 float64
+	for i, price := range prices {
+		x := float64(i)
+		y := price
+		sumX += x
+		sumY += y
+		sumXY += x * y
+		sumX2 += x * x
+	}
+	
+	// 斜率 = (n*Σxy - Σx*Σy) / (n*Σx² - (Σx)²)
+	denominator := n*sumX2 - sumX*sumX
+	if denominator == 0 {
+		return 0
+	}
+	slope := (n*sumXY - sumX*sumY) / denominator
+	
+	// 归一化斜率（相对于平均价格）
+	avgPrice := sumY / n
+	if avgPrice == 0 {
+		return 0
+	}
+	normalizedSlope := slope / avgPrice
+	
+	return normalizedSlope
+}
+
+// calculateVolumeTrend 计算成交量趋势（加权移动平均）
+func (s *GridStrategy) calculateVolumeTrend(volumes []int64) float64 {
+	if len(volumes) < 10 {
+		return 0
+	}
+	
+	// 计算近期加权平均
+	recentWeighted := 0.0
+	recentWeight := 0.0
+	// 计算远期加权平均
+	oldWeighted := 0.0
+	oldWeight := 0.0
+	
+	// 近期权重更高（最近40%的数据权重60%）
+	recentStart := len(volumes) * 6 / 10
+	for i := recentStart; i < len(volumes); i++ {
+		weight := float64(i - recentStart + 1)
+		recentWeighted += float64(volumes[i]) * weight
+		recentWeight += weight
+	}
+	
+	// 远期数据（前40%）
+	oldEnd := len(volumes) * 4 / 10
+	for i := 0; i < oldEnd; i++ {
+		weight := float64(oldEnd - i)
+		oldWeighted += float64(volumes[i]) * weight
+		oldWeight += weight
+	}
+	
+	if recentWeight == 0 || oldWeight == 0 {
+		return 0
+	}
+	
+	avgRecent := recentWeighted / recentWeight
+	avgOld := oldWeighted / oldWeight
+	
+	if avgOld == 0 {
+		return 0
+	}
+	
+	// 成交量变化率（正数表示放量，负数表示缩量）
+	volumeChange := (avgRecent - avgOld) / avgOld
+	
+	// 限制变化范围在[-1, 1]之间
+	if volumeChange > 1 {
+		volumeChange = 1
+	} else if volumeChange < -1 {
+		volumeChange = -1
+	}
+	
+	return volumeChange
+}
+
+// calculatePriceVolumeCorrelation 计算量价相关系数
+func (s *GridStrategy) calculatePriceVolumeCorrelation(prices []float64, volumes []int64) float64 {
+	n := len(prices)
+	if n < 5 {
+		return 0
+	}
+	
+	// 计算价格变化率和成交量变化率序列
+	priceChanges := make([]float64, n-1)
+	volumeChanges := make([]float64, n-1)
+	
+	for i := 1; i < n; i++ {
+		if prices[i-1] != 0 {
+			priceChanges[i-1] = (prices[i] - prices[i-1]) / prices[i-1]
+		}
+		if volumes[i-1] > 0 {
+			volumeChanges[i-1] = float64(volumes[i]-volumes[i-1]) / float64(volumes[i-1])
+		} else if volumes[i] > 0 {
+			volumeChanges[i-1] = 1
+		}
+		
+		// 限制极端值
+		if priceChanges[i-1] > 0.1 {
+			priceChanges[i-1] = 0.1
+		} else if priceChanges[i-1] < -0.1 {
+			priceChanges[i-1] = -0.1
+		}
+		if volumeChanges[i-1] > 2 {
+			volumeChanges[i-1] = 2
+		} else if volumeChanges[i-1] < -1 {
+			volumeChanges[i-1] = -1
+		}
+	}
+	
+	// 计算相关系数
+	return s.calculateCorrelation(priceChanges, volumeChanges)
+}
+
+// calculateCorrelation 计算两个序列的相关系数
+func (s *GridStrategy) calculateCorrelation(x, y []float64) float64 {
+	n := float64(len(x))
+	if n < 2 {
+		return 0
+	}
+	
+	var sumX, sumY, sumXY, sumX2, sumY2 float64
+	for i := 0; i < len(x); i++ {
+		sumX += x[i]
+		sumY += y[i]
+		sumXY += x[i] * y[i]
+		sumX2 += x[i] * x[i]
+		sumY2 += y[i] * y[i]
+	}
+	
+	denominator := math.Sqrt((n*sumX2 - sumX*sumX) * (n*sumY2 - sumY*sumY))
+	if denominator == 0 {
+		return 0
+	}
+	
+	correlation := (n*sumXY - sumX*sumY) / denominator
+	
+	// 限制范围在[-1, 1]
+	if correlation > 1 {
+		correlation = 1
+	} else if correlation < -1 {
+		correlation = -1
+	}
+	
+	return correlation
+}
+
+// calculateVolatility 计算波动率
+func (s *GridStrategy) calculateVolatility(prices []float64) float64 {
+	if len(prices) < 2 {
+		return 0
+	}
+	
+	// 计算收益率序列
+	returns := make([]float64, len(prices)-1)
+	for i := 1; i < len(prices); i++ {
+		if prices[i-1] != 0 {
+			returns[i-1] = (prices[i] - prices[i-1]) / prices[i-1]
+		}
+	}
+	
+	// 计算标准差
+	mean := 0.0
+	for _, r := range returns {
+		mean += r
+	}
+	mean /= float64(len(returns))
+	
+	variance := 0.0
+	for _, r := range returns {
+		diff := r - mean
+		variance += diff * diff
+	}
+	variance /= float64(len(returns))
+	
+	return math.Sqrt(variance)
+}
+
+// getDynamicThreshold 获取动态阈值
+func (s *GridStrategy) getDynamicThreshold(volatility float64) float64 {
+	// 基础阈值0.1%（日内的价格波动）
+	baseThreshold := 0.001
+	
+	// 根据波动率调整阈值
+	if volatility > 0.003 {
+		// 高波动市场，提高阈值
+		return baseThreshold * 2
+	} else if volatility < 0.001 {
+		// 低波动市场，降低阈值
+		return baseThreshold * 0.5
+	}
+	
+	return baseThreshold
+}
+
+
+方法2：
+// calculateWindowTrend 计算时间窗口内的趋势（简化高效版）
+func (s *GridStrategy) calculateWindowTrend(prices []float64, volumes []int64, timestamps []int64) string {
+	windowSize := len(prices)
+	if windowSize < s.appConfig.VolumeSmoothPeriod {
+		return "SIDEWAYS"
+	}
+	
+	// 1. 价格变化率（首尾比较）
+	priceChange := (prices[windowSize-1] - prices[0]) / prices[0]
+	
+	// 2. 成交量变化率（加权）
+	volumeChange := s.calculateWeightedVolumeChange(volumes)
+	
+	// 3. 价格方向一致性（多数原则）
+	direction := s.calculatePriceDirection(prices)
+	
+	// 4. 综合评分
+	score := 0.0
+	
+	// 价格因素（权重50%）
+	if priceChange > 0.001 {
+		score += 0.5
+	} else if priceChange < -0.001 {
+		score -= 0.5
+	}
+	
+	// 成交量因素（权重30%）
+	if volumeChange > 0.1 {
+		score += 0.3
+	} else if volumeChange < -0.1 {
+		score -= 0.3
+	}
+	
+	// 方向一致性（权重20%）
+	if direction > 0.6 {
+		score += 0.2
+	} else if direction < -0.6 {
+		score -= 0.2
+	}
+	
+	// 判断趋势
+	if score > 0.4 {
+		return "UP"
+	} else if score < -0.4 {
+		return "DOWN"
+	} else if score > 0.2 {
+		return "UP_WEAK"
+	} else if score < -0.2 {
+		return "DOWN_WEAK"
+	}
+	
+	return "SIDEWAYS"
+}
+
+// calculateWeightedVolumeChange 计算加权成交量变化
+func (s *GridStrategy) calculateWeightedVolumeChange(volumes []int64) float64 {
+	n := len(volumes)
+	if n < 20 {
+		return 0
+	}
+	
+	// 近期数据（最近30%）
+	recentStart := n * 7 / 10
+	var recentSum int64
+	for i := recentStart; i < n; i++ {
+		recentSum += volumes[i]
+	}
+	avgRecent := float64(recentSum) / float64(n-recentStart)
+	
+	// 远期数据（前30%）
+	oldEnd := n * 3 / 10
+	var oldSum int64
+	for i := 0; i < oldEnd; i++ {
+		oldSum += volumes[i]
+	}
+	avgOld := float64(oldSum) / float64(oldEnd)
+	
+	if avgOld == 0 {
+		return 0
+	}
+	
+	return (avgRecent - avgOld) / avgOld
+}
+
+// calculatePriceDirection 计算价格方向一致性
+func (s *GridStrategy) calculatePriceDirection(prices []float64) float64 {
+	if len(prices) < 2 {
+		return 0
+	}
+	
+	upCount := 0
+	downCount := 0
+	
+	for i := 1; i < len(prices); i++ {
+		if prices[i] > prices[i-1] {
+			upCount++
+		} else if prices[i] < prices[i-1] {
+			downCount++
+		}
+	}
+	
+	total := upCount + downCount
+	if total == 0 {
+		return 0
+	}
+	
+	return float64(upCount-downCount) / float64(total)
+}
+
+配置增加
+ // 趋势判断参数
+GridTrendThreshold float64 `json:"grid_long_trend_threshold"` // 趋势判断阈值，默认0.4
+
+2026-4-9
+1、控制台增加sell、buy指令
+   sell SOXL.US all
+   sell SOXL.US win
+   sell SOXL.US lost
+   buy SOXL.US 100
+2、仓位代码整理
+3、未卖出订单数量限制
+
+
+2026-4-11
+1、秒时数据和分时数据拆分
+待做：
+1、根据最近10分钟，每分钟开盘和收盘计算，升和降数量，最后1次权值最重，越新权值越重，升最少多少次才买，否则卖完，然后卖空
+
+不同时间权重差异对比
+权重类型	最旧权重	最新权重	最新/最旧比	是否满足“越新越重”
+线性 0.1~1.0	0.1	1.0	10倍	✅ 但差异过大
+线性 0.5~1.0	0.5	1.0	2倍	✅ 差异温和
+平方根	0.316	1.0	3.16倍	✅ 差异适中
+立方根	0.464	1.0	2.15倍	✅ 差异较小
+对数 (log2)	0.36	1.0	2.78倍	✅ 差异中等
+推荐：若您觉得 3 倍差异仍然偏大，可使用立方根或线性 0.6~1.0（1.67倍差）。代码中只需替换 timeWeight 计算即可。
+
+最终建议
+时间权重差异控制在 2~3 倍，避免最新分钟因时间因子过度主导，使成交量因子能够真正发挥作用。
+
+决策阈值（threshold）建议通过回测优化，一般取值 0.5~0.6。
+
+若仍有顾虑，可采用加法组合（weight = α*timeWeight + (1-α)*volWeightNorm），彻底消除乘积放大效应。
+
+
+2026-4-12
+1、量价趋势策略增加
+2、增加时间缩放因子
+3、取消未成交的挂单pendingQty不对修复
+
+2026-4-20
+1、盘中前N分钟、盘后N分钟交易数量减半
